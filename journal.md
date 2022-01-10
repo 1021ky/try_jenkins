@@ -14,6 +14,7 @@ https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/#jen
 
 ### やったこと
 
+us-west-1で
 
 #### Create a key pair
 
@@ -36,7 +37,144 @@ $
 
 #### Create a security group
 
+22と8080にはアクセスできるようにした
+まずは自分のグローバルIPアドレスからのみで。
+
+VPCは
+DNS ホスト名とDNS 解決を有効にしておかないと、インターネット公開されないようなので修正。
+ルーティング設定しなかったのでsshつながらなかった
+
+#### Using SSH to connect to your instance
+
+```bash
+$ aws ec2 describe-instances  --instance-ids i-0a517bc24c549527d  --query "Reservations[*].Instances[*].{Instance:InstanceId,NetworkInterfaces:NetworkInterfaces[*].Association.PublicDnsName}" --output json
+[
+    [
+        {
+            "Instance": "i-0a517bc24c549527d",
+            "NetworkInterfaces": [
+                "ec2-13-57-225-229.us-west-1.compute.amazonaws.com"
+            ]
+        }
+    ]
+]
+```
+
+aws ec2コマンドで、ssh先を取得
+
+```bash
+ssh -i ./jenkins_key_pair.pem ec2-user@ec2-13-57-225-229.us-west-1.compute.amazonaws.com
+```
+
+#### Download and install Jenkins
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo yum update –y
+Loaded plugins: extras_suggestions, langpacks, priorities,
+              : update-motd
+amzn2-core                              | 3.7 kB     00:00
+No Match for argument: –y
+No packages marked for update
+[ec2-user@ip-10-0-0-147 ~]$
+```
+
+updateするものはなかったようだ。
+
+> Add the Jenkins repo using the following command:
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo wget -O /etc/yum.repos.d/jenkins.repo \
+>     https://pkg.jenkins.io/redhat-stable/jenkins.repo
+--2022-01-10 02:47:33--  https://pkg.jenkins.io/redhat-stable/jenkins.repo
+Resolving pkg.jenkins.io (pkg.jenkins.io)... 151.101.42.133, 2a04:4e42:a::645
+Connecting to pkg.jenkins.io (pkg.jenkins.io)|151.101.42.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 85
+Saving to: ‘/etc/yum.repos.d/jenkins.repo’
+
+100%[=====================>] 85          --.-K/s   in 0s
+
+2022-01-10 02:47:34 (3.84 MB/s) - ‘/etc/yum.repos.d/jenkins.repo’ saved [85/85]
+
+[ec2-user@ip-10-0-0-147 ~]$
+```
+
+> Import a key file from Jenkins-CI to enable installation from the package
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo yum install jenkins java-1.8.0-openjdk-devel -y
+
+...
+
+---> Package mesa-libglapi.x86_64 0:18.3.4-5.amzn2.0.1 will be installed
+--> Finished Dependency Resolution
+Error: Package: jenkins-2.319.1-1.1.noarch (jenkins)
+           Requires: daemonize
+ You could try using --skip-broken to work around the problem
+ You could try running: rpm -Va --nofiles --nodigest
+[ec2-user@ip-10-0-0-147 ~]$
+```
+
+以下を参考にして、daemonizeをインストール
+
+* https://stackoverflow.com/questions/68806741/how-to-fix-yum-update-of-jenkins
+* https://issues.jenkins.io/browse/JENKINS-66361
+
+```bash
+sudo amazon-linux-extras install epel -y
+sudo yum update -y
+```
+
+リトライ
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo yum install jenkins java-1.8.0-openjdk-devel -y
+Loaded plugins: extras_suggestions, langpacks, priorities,
+              : update-motd
+
+...
+
+  xorg-x11-fonts-Type1.noarch 0:7.5-9.amzn2
+
+Complete!
+[ec2-user@ip-10-0-0-147 ~]$
+
+```
+
+エラーなく終了！
+
+> Install Jenkins:
+> Start Jenkins as a service:
+>
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo systemctl daemon-reload
+[ec2-user@ip-10-0-0-147 ~]$ sudo systemctl start jenkins
+```
+
+> You can check the status of the Jenkins service using the command:
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo systemctl status jenkins
+● jenkins.service - LSB: Jenkins Automation Server
+   Loaded: loaded (/etc/rc.d/init.d/jenkins; bad; vendor preset: disabled)
+   Active: active (running) since Mon 2022-01-10 23:37:09 UTC; 9s ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 5592 ExecStart=/etc/rc.d/init.d/jenkins start (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/jenkins.service
+           └─5596 /etc/alternatives/java -Djava.awt.headless...
+
+Jan 10 23:37:09 ip-10-0-0-147.us-west-1.compute.internal systemd[1]: ...
+Jan 10 23:37:09 ip-10-0-0-147.us-west-1.compute.internal jenkins[5592]: ...
+Jan 10 23:37:09 ip-10-0-0-147.us-west-1.compute.internal systemd[1]: ...
+Hint: Some lines were ellipsized, use -l to show in full.
+[ec2-user@ip-10-0-0-147 ~]$
+```
+
+動いているようだ。
+
 
 
 ## 参考にしたリンク
 
+https://dev.classmethod.jp/articles/sales-create-ec2/
