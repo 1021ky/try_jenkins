@@ -173,8 +173,34 @@ Hint: Some lines were ellipsized, use -l to show in full.
 
 動いているようだ。
 
+> Connect to http://<your_server_public_DNS>:8080 from your favorite browser.
 
+ということで
 
+http://ec2-13-57-225-229.us-west-1.compute.amazonaws.com:8080/login?from=%2F
+にアクセスして、無事jenkinsの設定画面が表示された。
+
+```bash
+[ec2-user@ip-10-0-0-147 ~]$ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+3************************
+[ec2-user@ip-10-0-0-147 ~]$
+```
+
+以下2つのプラグインをインストール。
+ドキュメントではEC2だけ書かれていたが、ECRも後で試したいので。
+
+* Amazon Web Services SDK :: EC2
+* Amazon Web Services SDK :: ECR
+
+プラグインによってEC2インスタンスをjenkins agentとして使えるようになるらしい。
+
+まちがえていた。
+
+インストールすべきはこっち
+
+* Amazon EC2
+
+EC2インスタンスの認証情報をいれると、エージェントとして使えるようになった。
 ## 参考にしたリンク
 
 https://dev.classmethod.jp/articles/sales-create-ec2/
