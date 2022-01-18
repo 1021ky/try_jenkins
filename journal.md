@@ -201,6 +201,25 @@ http://ec2-13-57-225-229.us-west-1.compute.amazonaws.com:8080/login?from=%2F
 * Amazon EC2
 
 EC2インスタンスの認証情報をいれると、エージェントとして使えるようになった。
+
+## terraform化する
+
+ssh-keygen -y -f /path_to_key_pair/my-key-pair.pem
+
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#retrieving-the-public-key
+
+ksanchu@DESKTOP-93BSLTI:/mnt/c/Users/ksanc/Documents/work/docker/try_jenkins/terraform
+$ ssh-keygen -y -f ../jenkins_key_pair.pem > jenkins_key_pa
+ir.pub
+ksanchu@DESKTOP-93BSLTI:/mnt/c/Users/ksanc/Documents/work/docker/try_jenkins/terraform
+$
+
+ssh-keygen -y オプションは
+
+	OpenSSH形式の秘密鍵ファイルを読み出し、OpenSSH形式の公開鍵を標準出力に出力する
+
+なので、作れると。
+
 ## 参考にしたリンク
 
 https://dev.classmethod.jp/articles/sales-create-ec2/
