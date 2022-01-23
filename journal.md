@@ -204,6 +204,12 @@ EC2インスタンスの認証情報をいれると、エージェントとし�
 
 ## terraform化する
 
+やったことの理解を深めるのと、再現をできるようにしたいのでterraform化する。
+
+鍵の設定をterraformでどうしたらいいかわからなかった。
+手元にはpemファイルしかない。
+調べると以下の方法で変換できる。
+
 ssh-keygen -y -f /path_to_key_pair/my-key-pair.pem
 
 https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#retrieving-the-public-key
@@ -219,6 +225,31 @@ ssh-keygen -y オプションは
 	OpenSSH形式の秘密鍵ファイルを読み出し、OpenSSH形式の公開鍵を標準出力に出力する
 
 なので、作れると。
+
+以下のように定義。
+
+```terraform
+resource "aws_key_pair" "try-jenkins-dev-keypair" {
+  key_name   = "try-jenkins-dev-keypair"
+  public_key = file("./jenkins_key_pair.pub") # `ssh-keygen`コマンドで作成した公開鍵を指定
+}
+```
+
+これをinstanceのリソースに紐付ける。
+
+```terraform
+resource "aws_instance" "try-jenkins-dev-ec2" {
+  ami           = data.aws_ssm_parameter.amazon-linux2-latest-ami.value
+  instance_type = "t2.micro"
+  key_name      = aws_key_pair.try-jenkins-dev-keypair.id
+
+  ...
+}
+
+```
+
+立てたインスタンスにsshできるようになった
+
 
 ## 参考にしたリンク
 
