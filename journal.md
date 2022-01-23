@@ -250,6 +250,14 @@ resource "aws_instance" "try-jenkins-dev-ec2" {
 
 立てたインスタンスにsshできるようになった
 
+```bash
+$ ssh -i ../jenkins_key_pair.pem ec2-user@ec2-50-18-191-64.us-west-1.compute.amazonaws.com
+
+...
+
+[ec2-user@ip-10-0-0-134 ~]$
+```
+
 
 ## 参考にしたリンク
 
