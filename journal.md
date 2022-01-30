@@ -258,6 +258,17 @@ $ ssh -i ../jenkins_key_pair.pem ec2-user@ec2-50-18-191-64.us-west-1.compute.ama
 [ec2-user@ip-10-0-0-134 ~]$
 ```
 
+最初にインストールするyumパッケージをセットアップ時にremote-execで実行するようにした。
+
+セットアップが完了したら、adminパスワードを以下のように取得
+
+```bash
+ ssh -i ../jenkins_key_pair.pem ec2-user@ec2-54-151-115-70.us-west-1.compute.amazonaws.com "sudo cat /var/lib/jenkins/secrets/initialAdminPassword"
+72c5b*******************
+```
+
+その後ログインできた。
+
 
 ## 参考にしたリンク
 
