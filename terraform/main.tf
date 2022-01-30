@@ -136,6 +136,26 @@ resource "aws_instance" "try-jenkins-dev-ec2" {
     aws_security_group.try-jenkins-dev-sg.id
   ]
 
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      host        = self.public_ip
+      private_key = file("../jenkins_key_pair.pem")
+    }
+    inline = [
+      "sudo amazon-linux-extras install epel -y",
+      "sudo yum update –y",
+      "sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo",
+      "sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key",
+      "sudo yum upgrade -y",
+      "sudo yum install jenkins java-1.8.0-openjdk-devel -y",
+      "sudo systemctl daemon-reload",
+      "sudo systemctl start jenkins",
+    ]
+  }
+
+
   tags = {
     Name        = "try-jenkins-dev-ec2"
     Env         = "dev"
@@ -146,6 +166,12 @@ resource "aws_instance" "try-jenkins-dev-ec2" {
 resource "aws_eip" "try-jenkins-dev-eip" {
   instance = aws_instance.try-jenkins-dev-ec2.id
   vpc      = true
+
+  tags = {
+    Name        = "try-jenkins-dev-ec2"
+    Env         = "dev"
+    ServiceName = "try-jenkins"
+  }
 }
 
 
