@@ -22,16 +22,15 @@ terraform {
 
 # network
 
-
 resource "aws_vpc" "try-jenkins-on-ecs-dev-vpc" {
   cidr_block           = "10.0.0.0/16"
   instance_tenancy     = "default"
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name        = "try-jenkins-on-ecs-dev-vpc"
-    Env         = "dev"
-    ServiceName = "try-jenkins"
+    Name        = var.resource_tags["Name"]
+    Env         = var.resource_tags["Env"]
+    ServiceName = var.resource_tags["ServiceName"]
   }
 }
 
@@ -43,9 +42,9 @@ resource "aws_subnet" "try-jenkins-on-ecs-dev-subnet01" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "try-jenkins-on-ecs-dev-subnet01"
-    Env         = "dev"
-    ServiceName = "try-jenkins"
+    Name        = var.resource_tags["Name"]
+    Env         = var.resource_tags["Env"]
+    ServiceName = var.resource_tags["ServiceName"]
   }
 }
 
@@ -57,18 +56,18 @@ resource "aws_route_table" "try-jenkins-on-ecs-dev-public-rtb" {
   }
 
   tags = {
-    Name        = "try-jenkins-on-ecs-dev-public-rtb"
-    Env         = "dev"
-    ServiceName = "try-jenkins"
+    Name        = var.resource_tags["Name"]
+    Env         = var.resource_tags["Env"]
+    ServiceName = var.resource_tags["ServiceName"]
   }
 }
 
 resource "aws_internet_gateway" "try-jenkins-on-ecs-dev-igw" {
   vpc_id = aws_vpc.try-jenkins-on-ecs-dev-vpc.id
   tags = {
-    Name        = "try-jenkins-on-ecs-dev-igw"
-    Env         = "dev"
-    ServiceName = "try-jenkins"
+    Name        = var.resource_tags["Name"]
+    Env         = var.resource_tags["Env"]
+    ServiceName = var.resource_tags["ServiceName"]
   }
 }
 
@@ -78,14 +77,14 @@ resource "aws_route_table_association" "try-jenkins-on-ecs-dev-rtb-assoc" {
 }
 
 resource "aws_security_group" "try-jenkins-on-ecs-dev-sg" {
-  name        = "try-jenkins-on-ecs-dev-sg"
+  name        = "${var.name_prefix}-sg"
   description = "Allow SSH HTTP inbound traffic"
   vpc_id      = aws_vpc.try-jenkins-on-ecs-dev-vpc.id
 
   tags = {
-    Name        = "try-jenkins-on-ecs-dev-sg"
-    Env         = "dev"
-    ServiceName = "try-jenkins"
+    Name        = var.resource_tags["Name"]
+    Env         = var.resource_tags["Env"]
+    ServiceName = var.resource_tags["ServiceName"]
   }
 }
 
@@ -146,28 +145,34 @@ resource "aws_ecs_task_definition" "try-jenkins-on-ecs-dev-ecs-task" {
           {
             containerPort = 8080
             hostPort      = 8080
-            protocol = "tcp"
+            protocol      = "tcp"
           }
         ],
-        user = "jenkins"
+        user = "jenkins",
+        "environment" : [
+          {
+            "name" : "CASC_JENKINS_CONFIG",
+            "value" : "/usr/share/jenkins/ref/jenkins.yaml"
+          }
+        ],
       }
     ]
   )
 }
 
 resource "aws_ecs_cluster" "try-jenkins-on-ecs-dev-ecs-cluster" {
-  name = "try-jenkins-on-ecs-dev-ecs-cluster"
+  name = "${var.name_prefix}-ecs-cluster"
 }
 
 resource "aws_ecs_service" "try-jenkins-on-ecs-dev-ecs-service" {
-  name            = "try-jenkins-on-ecs-dev-ecs-service"
+  name            = "${var.name_prefix}-ecs-service"
   cluster         = aws_ecs_cluster.try-jenkins-on-ecs-dev-ecs-cluster.name
   task_definition = aws_ecs_task_definition.try-jenkins-on-ecs-dev-ecs-task.arn
   desired_count   = 1
-  # iam_role        = aws_iam_role.foo.arn
-  # depends_on      = [aws_iam_role_policy.foo]
+  launch_type     = "FARGATE"
 
   network_configuration {
+    assign_public_ip = true
     # タスクの起動を許可するサブネット
     subnets = [
       aws_subnet.try-jenkins-on-ecs-dev-subnet01.id
@@ -177,11 +182,13 @@ resource "aws_ecs_service" "try-jenkins-on-ecs-dev-ecs-service" {
       aws_security_group.try-jenkins-on-ecs-dev-sg.id
     ]
   }
+
+  # デプロイ毎にタスク定義が更新されるため、リソース初回作成時を除き変更を無視
+  # ref https://dev.classmethod.jp/articles/terraform-ecs-fargate-apache-run/
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
-
-
-
-
 
 resource "aws_key_pair" "try-jenkins-on-ecs-dev-keypair" {
   key_name   = "try-jenkins-on-ecs-dev-keypair"
