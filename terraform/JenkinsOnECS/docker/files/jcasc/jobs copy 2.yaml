@@ -1,0 +1,10 @@
+jobs:
+  - script: >
+      multibranchPipelineJob('configuration-as-code3') {
+          branchSources {
+              git {
+                  id = 'configuration-as-code3'
+                  remote('https://github.com/jenkinsci/configuration-as-code-plugin.git')
+              }
+          }
+      }

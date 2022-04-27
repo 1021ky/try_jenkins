@@ -273,3 +273,19 @@ $ ssh -i ../jenkins_key_pair.pem ec2-user@ec2-50-18-191-64.us-west-1.compute.ama
 ## 参考にしたリンク
 
 https://dev.classmethod.jp/articles/sales-create-ec2/
+
+## jenkins configuration as codeでjobをコード化
+
+```
+$ docker run --name jenkins-blueocean --rm --detach   --network jenkins --env DOCKER_HOST=tcp://docker:2376   --env DOCKER_CERT_PATH=/certs/client --env DOCKER_TLS_VERIFY=1   --publish 8080:8080 --publish 50000:50000  --volume $(pwd)/files/jcasc:/var/jenkins_conf   --volume jenkins-docker-certs:/certs/client:ro myjenkins:0.1
+```
+
+こんな感じで設定ファイルをマウントしてやれば、ファイル追加してリロードするだけでjobは追加できる。
+jobファイルは、同じファイルでもいいけど、分割してもきっちり読み込んでくれる。
+jobがトップレベルのyamlの1つのファイルに纏めなきゃいけないものかと思っていたが、違うようだ。
+これならだれでも好きなときにお試しでコミットしてリロードすればジョブ追加できるね。
+
+## bitbucketとの連携
+
+bitbucketとの連携（pushと連動して動く）とかもjob dslでかけるよう
+プラグインを使うと
